@@ -30,3 +30,6 @@
 
 /* v0.5: compact single-screen choices */
 .field{display:block;margin:12px 0}.field span{display:block;font-size:13px;font-weight:700;margin-bottom:5px}.story-panel #decision[hidden],.story-panel #skip[hidden]{display:none!important}.film-caption{min-height:42px}.story-panel .scene{margin-bottom:5px}.story-panel .heading{font-size:17px}.top small{font-size:9px;opacity:.6}@media(max-height:760px){#app{padding-top:7px}.logo{font-size:20px}.panel{padding:10px 12px}.scene{aspect-ratio:2.05}.film-caption{min-height:35px}.choice{min-height:39px;padding:8px 10px}}
+
+/* v0.6 compact timeline editor */
+.event-list{display:grid;gap:7px}.event-row{display:grid;grid-template-columns:58px 88px minmax(0,1fr);gap:5px}.event-row input,.event-row select,.person-row input,.person-row select{min-width:0;width:100%;border:1px solid #dfcbce;border-radius:9px;padding:8px 5px;background:#fff;color:#473a48;font-size:12px}.person-row{display:grid;grid-template-columns:1fr 135px;gap:7px;margin:9px 0}.event-text{min-width:0}.film-caption{min-height:58px;line-height:1.6}.notice{line-height:1.65}.panel .primary{margin-top:9px}@media(max-height:730px){.scene{aspect-ratio:2.2}.film-caption{min-height:40px}.panel{padding:10px 12px}}
