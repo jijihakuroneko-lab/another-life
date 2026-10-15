@@ -1,29 +1,28 @@
-'use strict';
-const $=s=>document.querySelector(s), app=$('#app');
-const KEY='another-life-save-v1';
-const fresh=()=>({screen:'welcome',name:'あなた',age:30,home:'海の近く',interest:'新しいことを知る',milestone:'',chapter:0,choices:[],future:'',action:'',history:[]});
-let state;try{state={...fresh(),...JSON.parse(localStorage.getItem(KEY)||'{}')}}catch{state=fresh()}
-let frame=0,anim=0,storyTimer=null;
-const stopStory=()=>{if(storyTimer!==null){clearTimeout(storyTimer);storyTimer=null}};
+// ANOTHER LIFE v0.5 — branching lives. No external API or tracking.
+const KEY='another-life-v05';
+const app=document.getElementById('app');
+const $=s=>document.querySelector(s);
 const safe=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const persist=()=>localStorage.setItem(KEY,JSON.stringify(state));
-const set=(patch)=>{stopStory();state={...state,...patch};persist();render();window.scrollTo({top:0,behavior:'instant'})};
-const ageAt=i=>Math.max(5,Math.min(state.age,[6,12,17,22,26,state.age][i]));
-const chapters=[
- {title:'はじめての冒険',place:'放課後の道',story:s=>`${s.name}は、知らない道を歩くのが少し好き。今日は友達と帰る途中、見たことのない小道を見つけた。`,options:['友達について、いつもの道を帰る','「こっちに行ってみない？」と提案する'],results:['安心できるいつもの景色。帰り道で友達の面白い話を聞いた。','知らない小さな公園を発見。友達も笑っている。']},
- {title:'好きなものの形',place:'学校の教室',story:s=>`進路を考える季節。${s.name}は「${s.interest}」が好き。でも、周囲には別の道を勧める人もいる。`,options:['勧められた道をまず調べてみる','自分の好きな分野も調べてみる'],results:['思いがけない得意分野を発見した。好きなことへの関心も、心の片隅に残った。','同じ関心を持つ人を見つけた。知らなかった道が、ひとつ増えた。']},
- {title:'小さな違和感',place:'帰り道のカフェ',story:s=>`「それはあなたには難しいんじゃない？」。誰かの何気ない言葉が、${s.name}の胸に残る。`,options:['今は言い返さず、自分の気持ちを整理する','「どうしてそう思うの？」と聞いてみる'],results:['帰り道、ノートに気持ちを書いた。自分の考えが少しずつ見えてきた。','相手は少し驚いた。答えは曖昧だったけれど、前提を問い直せた。']},
- {title:'はじめての社会',place:'街の仕事場',story:s=>`新しい環境に慣れ始めた${s.name}。気になる挑戦があるけれど、今の役割も大切だ。`,options:['いまの仕事を丁寧に続ける','興味があると伝え、調整を相談する'],results:['積み重ねた経験が自信になった。次の機会に向けて準備が進む。','すぐには実現しなかったが、希望を知ってくれる人が増えた。']},
- {title:'暮らしのかたち',place:'夜のリビング',story:s=>`仕事も暮らしも、少しずつ忙しくなってきた。${s.name}は、自分の時間が前より少なくなったと感じている。`,options:['まずは今のペースで様子を見る','誰かに頼れること、減らせることを探す'],results:['休む時間の大切さに気づいた。次は自分の予定も先に入れてみたい。','すぐに全部は変わらない。でも、ひとりで抱えなくていいことが見えてきた。']},
- {title:'今日、ここにいる',place:'いつもの街',story:s=>`そして、${s.age}歳。\n\n${s.name}は、${s.home}から始まった物語を歩いてきた。${s.milestone?`\n「${s.milestone}」という大切な出来事もあった。`:''}\n\n少し違う人生。でも、どこか知っている自分。`,options:[],results:[]}
-];
-const futures=[['挑戦','新しい仕事や学びを探す'],['時間','自分だけの時間を増やす'],['声','自分の希望を言葉にする'],['探検','まだ知らない可能性を探す']];
-const actions=['気になることを10分だけ調べる','今の気持ちを一行だけ書く','自分のための予定を一つ考える','今日は何も決めず、余韻を楽しむ'];
-function shell(content){app.innerHTML=`<header class="top"><span>✦ ANOTHER LIFE</span><button class="ghost" id="restart" aria-label="最初からやり直す">↺ はじめから</button></header>${content}<div class="foot">あなたの人生に、正解はひとつじゃない。</div>`;$('#restart')?.addEventListener('click',()=>{if(confirm('保存した物語を消して最初から始めますか？')){state=fresh();persist();render()}})}
+const fresh=()=>({screen:'welcome',name:'あなた',age:30,chapter:0,choices:[],future:'',action:''});
+let state;try{state={...fresh(),...JSON.parse(localStorage.getItem(KEY)||'{}')}}catch{state=fresh()}
+let anim=0,storyTimer=0;
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(state))}catch{}};
+function set(p){clearTimeout(storyTimer);cancelAnimationFrame(anim);state={...state,...p};save();render()}
+function shell(content){app.innerHTML=`<header class="top"><span>✦ ANOTHER LIFE <small>v0.5</small></span><button class="ghost" id="restart">↺ 最初から</button></header>${content}<div class="foot">選ばなかった道にも、別の物語がある。</div>`;$('#restart').onclick=()=>{if(confirm('この人生を最初からやり直しますか？'))set(fresh())}}
+const stages=[10,15,22,30];
+// Every branch changes a scene, location, encounter and later opportunity.
+const routes={
+  wander:{label:'知らない道へ',teen:{place:'丘の上の観測所',intro:'あの日見つけた細い道の先には、小さな観測所があった。',person:'星の観察が好きな友人・ソラ',event:'ソラが「今夜、一緒に星を見ない？」と声をかける。',options:['誘いに乗って外へ出る','今日は帰って、自分の記録をつける']},young:[{place:'遠い街の共同研究室',intro:'ソラの紹介で、遠くの街の小さな研究室に来た。知らない人たちと空を見上げる毎日が始まる。',job:'旅する調査員',home:'港のある街'}, {place:'古い町の資料館',intro:'自分でつけた星の記録が、町の資料館の人の目に留まった。静かな部屋で、世界を調べる仕事が始まる。',job:'資料を編む人',home:'古い町'}]},
+  familiar:{label:'いつもの帰り道',teen:{place:'路地裏の古本屋',intro:'いつもの道で雨宿りした古本屋。店主は何も聞かず、温かいお茶を出してくれた。',person:'物語を書くのが好きな友人・ハル',event:'店で知り合ったハルが、作りかけの小さな本を見せてくれた。',options:['一緒に本を作ってみる','まずは一人で物語を書いてみる']},young:[{place:'小さな出版社',intro:'ハルと作った本が誰かの手に届き、二人は小さな出版社に呼ばれた。知らない物語が次々と集まってくる。',job:'本を届ける人',home:'賑やかな街'}, {place:'静かな喫茶室',intro:'一人で書き続けた物語を、近所の喫茶室で読んでもらうようになった。やがて、遠くからも人が訪れる。',job:'物語を紡ぐ人',home:'緑の多い町'}]}
+};
+function path(){const r=state.choices[0]===1?'familiar':'wander';const t=state.choices[1]===1?1:0;return {r,t,route:routes[r],young:routes[r].young[t]}}
+function scene(){return `<div class="scene"><canvas aria-label="丸い主人公とゆっくり動く風景"></canvas></div>`}
+function progress(){return `<div class="progress"><div style="width:${(state.chapter+1)/4*100}%"></div></div>`}
+function stageData(){const i=state.chapter,p=path();if(i===0)return {place:'放課後の分かれ道',intro:'10歳。帰り道に、見慣れない小道を見つけた。\n少し遠回りになるけれど、先には何があるんだろう。',question:'今日はどちらへ帰る？',options:['知らない道を進んでみる','いつもの道で帰る']};if(i===1)return {place:p.route.teen.place,intro:p.route.teen.intro+'\nそこで出会ったのは、'+p.route.teen.person+'。',question:p.route.teen.event,options:p.route.teen.options};if(i===2)return {place:p.young.place,intro:p.young.intro,question:'新しい機会が目の前にある。どう向き合う？',options:['今いる場所で、もう少し挑戦する','別の街で、新しい暮らしを始める']};const moved=state.choices[2]===1;return {place:moved?'新しい街の朝':p.young.home,intro:`30歳。${moved?'引っ越した先の街で、新しい人たちと出会った。':'積み重ねてきた日々が、少しずつ形になってきた。'}\n今のあなたは「${p.young.job}」として暮らしている。\nここまでの景色は、選んだ道によって違っている。`,question:'ここから先は、まだ決まっていない。',options:[]}}
 function drawScene(type){
  const canvas=$('canvas');if(!canvas)return;
  cancelAnimationFrame(anim);const ctx=canvas.getContext('2d');if(!ctx)return;
- let tick=0;const chapter=state.screen==='welcome'?0:state.screen==='future'||state.screen==='done'?5:Math.min(state.chapter||0,5);
+ let tick=0;const chapter=state.screen==='welcome'?0:state.screen==='future'||state.screen==='done'?5:([0,1,3,5][Math.min(state.chapter||0,3)]||0);
  const scenes=[
  {sky:['#d4e8e4','#fff0d7'],ground:'#b8cdb1',kind:'park',time:'day'},
  {sky:['#d5e6ee','#f9e9d8'],ground:'#c9c0b5',kind:'school',time:'day'},
@@ -77,35 +76,19 @@ function drawScene(type){
  function paint(){if(!canvas.isConnected)return;if(canvas.width!==w*ratio){canvas.width=w*ratio;canvas.height=h*ratio}ctx.setTransform(ratio,0,0,ratio,0,0);tick+=.016;ctx.clearRect(0,0,w,h);background(tick);protagonist(tick);anim=requestAnimationFrame(paint)}
  paint();
 }
-function render(){stopStory();cancelAnimationFrame(anim);if(state.screen==='welcome'){shell(`<h1 class="logo">ANOTHER LIFE</h1><p class="subtitle">もうひとつの人生を、ちょっと歩いてみよう。</p><div class="panel"><div class="scene"><canvas aria-label="街に立つ小さな主人公のアニメーション"></canvas></div><div class="stars">✦ ✧ ✦</div><h2 class="heading">もし、あの日の選択が<br>少し違っていたら？</h2><p class="story">自分に似た小さな主人公と、子ども時代から今日までを旅する物語。\n最後のページは、まだ白紙。</p><button class="primary" id="begin">物語をはじめる →</button><p class="tiny">約3〜5分で遊べる試作版。入力はこの端末内に保存され、サーバーには送信されません。</p></div>`);$('#begin').onclick=()=>set({screen:'setup'});drawScene('start');return}
-if(state.screen==='setup'){shell(`<h1 class="logo">あなたの物語</h1><div class="panel"><div class="chapter">PROLOGUE</div><h2 class="heading">主人公をつくろう</h2><p class="tiny">本名でなくてOK。詳しい個人情報は必要ないよ。</p><form id="setupForm"><div class="field"><label for="name">呼び名</label><input id="name" maxlength="16" value="${safe(state.name==='あなた'?'':state.name)}" placeholder="例：かほ"></div><div class="field"><label for="age">今の年齢（18〜90歳）</label><input id="age" type="number" min="18" max="90" required value="${state.age}"></div><div class="field"><label for="home">思い出のある場所</label><input id="home" maxlength="35" value="${safe(state.home)}" placeholder="例：海の近くの街"></div><div class="field"><label for="interest">昔から好きなこと</label><input id="interest" maxlength="35" value="${safe(state.interest)}" placeholder="例：動物、絵を描くこと"></div><div class="field"><label for="milestone">人生の大きな出来事（任意）</label><input id="milestone" maxlength="60" value="${safe(state.milestone)}" placeholder="例：新しい街へ引っ越した"></div><button class="primary" type="submit">私の人生を再生する ▶</button></form><p class="tiny">物語は架空の分岐です。実際の過去や未来を推定するものではありません。</p></div>`);$('#setupForm').onsubmit=e=>{e.preventDefault();set({name:$('#name').value.trim()||'あなた',age:Math.max(18,Math.min(90,Number($('#age').value)||30)),home:$('#home').value.trim()||'ある街',interest:$('#interest').value.trim()||'新しいことを知る',milestone:$('#milestone').value.trim(),chapter:0,choices:[],screen:'story'})};return}
-if(state.screen==='story'){
- const i=Math.max(0,Math.min(5,state.chapter||0)),c=chapters[i],end=i===5;
- const past=state.choices[0], school=state.choices[1], voice=state.choices[2];
- const echoes=[
-  '',
-  '',
-  past===1?'あの小道で見つけた小さな公園を、ふと思い出す。':'いつもの帰り道で聞いた、友達の笑い声を思い出す。',
-  school===1?'以前、自分の好きなことを調べた夜があった。あの好奇心は今も消えていない。':'以前、勧められた道を調べたことがある。知らない世界を知った経験が今につながっている。',
-  voice===1?'あの日、誰かの言葉に「どうして？」と問い返した。その一言を今も覚えている。':'あの日、胸の中の違和感をそっと整理した。自分の気持ちに耳を澄ます時間は今も大切だ。',
-  school===1?'好きなことを探した日も、': '知らない可能性を調べた日も、'
- ];
- const echo=i>=2&&state.choices[i-2]!==undefined?echoes[i]:'';
- shell(`<h1 class="logo">${safe(state.name)}の人生</h1><div class="progress"><div style="width:${(i+1)/6*100}%"></div></div><div class="panel story-panel"><div class="row"><span class="chapter">CHAPTER ${String(i+1).padStart(2,'0')} · ${safe(c.place)}</span><span class="tag">${ageAt(i)}歳</span></div><div class="scene"><canvas aria-label="小さな主人公のアニメーション"></canvas></div><div class="film-caption" aria-live="polite" id="filmCaption">物語が始まる…</div><div id="filmControls"><button class="film-skip" id="skipFilm">演出をスキップ ››</button></div><div id="storyDecision" hidden><h2 class="heading">${safe(c.title)}</h2><p class="story">${safe(c.story(state))}</p>${end?`<div class="ending">ここから先は、<br>まだ誰も知らない。</div><button class="primary" id="finish">次は、どうする？ →</button>`:`<div class="chapter">あなたなら、どうする？</div><div class="choices">${c.options.map((v,n)=>`<button class="choice" data-pick="${n}">${safe(v)} →</button>`).join('')}</div>`}</div><div id="storyAfter" hidden><div class="notice">${safe(c.results[state.choices[i]]||'')}</div><button class="primary" id="nextChapter">${i===4?'今日へ進む →':'数年後へ →'}</button></div></div><button class="secondary" id="back">← ${i?'ひとつ前の章へ':'プロフィールを編集'}</button>`);
- const caption=$('#filmCaption'), decision=$('#storyDecision'), after=$('#storyAfter'),controls=$('#filmControls');
- const clips=[`${ageAt(i)}歳。${c.place}。`,echo||'今日も、小さな一日が始まる。',i===5?'そして、物語は今日に追いついた。':'何かが、少しだけ変わろうとしている。'];
- let clip=0;
- const reveal=()=>{stopStory();caption.textContent='';controls.hidden=true;if(!end&&state.choices[i]!==undefined){after.hidden=false;caption.textContent='あの日の選択が、物語に残っている。'}else decision.hidden=false;};
- const step=()=>{if(clip>=clips.length){reveal();return}caption.textContent=clips[clip++];storyTimer=setTimeout(step,clip===1?1500:1900)};
- storyTimer=setTimeout(step,350);
- $('#skipFilm').onclick=reveal;
- document.querySelectorAll('[data-pick]').forEach(b=>b.onclick=()=>{const a=[...state.choices];a[i]=Number(b.dataset.pick);state.choices=a;persist();decision.hidden=true;after.hidden=false;caption.textContent='小さな選択が、ひとつ残った。';});
- $('#nextChapter')?.addEventListener('click',()=>set({chapter:i+1}));
- $('#finish')?.addEventListener('click',()=>set({screen:'future'}));
- $('#back').onclick=()=>i?set({chapter:i-1}):set({screen:'setup'});
- drawScene(end?'end':'story');return}
-if(state.screen==='future'){shell(`<h1 class="logo">AFTER STORY</h1><div class="panel"><div class="chapter">LAST EPISODE · ${state.age}歳</div><div class="scene"><canvas aria-label="主人公が新しい道を見つめるアニメーション"></canvas></div><h2 class="heading">つづきは、あなた。</h2><p class="story">もうひとつの人生は、今日のあなたに追いついた。\n\nこれから見てみたい未来は、どれ？</p><div class="choices">${futures.map(([k,v])=>`<button class="choice" data-future="${k}">${v} →</button>`).join('')}</div></div><button class="secondary" id="replay">← 最終章をもう一度見る</button>`);document.querySelectorAll('[data-future]').forEach(b=>b.onclick=()=>set({future:b.dataset.future,screen:'action'}));$('#replay').onclick=()=>set({screen:'story',chapter:5});drawScene('future');return}
-if(state.screen==='action'){const label=futures.find(f=>f[0]===state.future)?.[1]||'未来を探す';shell(`<h1 class="logo">未来のしおり</h1><div class="panel"><div class="chapter">THE NEXT PAGE</div><h2 class="heading">${safe(label)}</h2><p class="story">未来を決めなくても大丈夫。まずは、あなたのペースで小さな一歩を選んでみよう。</p><div class="choices">${actions.map((a,i)=>`<button class="choice" data-action="${i}">${safe(a)} →</button>`).join('')}</div></div><button class="secondary" id="back">← 別の未来を選ぶ</button>`);document.querySelectorAll('[data-action]').forEach(b=>b.onclick=()=>set({action:actions[Number(b.dataset.action)],screen:'done'}));$('#back').onclick=()=>set({screen:'future'});return}
-if(state.screen==='done'){const label=futures.find(f=>f[0]===state.future)?.[1]||'未来を探す';shell(`<h1 class="logo">ANOTHER LIFE</h1><div class="panel"><div class="scene"><canvas aria-label="主人公の物語のラストシーン"></canvas></div><div class="stars">✦ ✧ ✦</div><div class="ending">次は、どうする？</div><p class="story" style="text-align:center">ここまでが、もうひとつの人生。\nここから先は、あなた自身の物語。</p><div class="notice"><b>これから見たい未来</b><br>${safe(label)}<br><br><b>最初の一歩</b><br>${safe(state.action)}</div><button class="primary" id="copy">私の未来のしおりをコピー</button><button class="secondary" id="again">別の未来も見てみる</button><button class="secondary" id="restartStory">もう一度、人生を旅する</button><p class="tiny">この端末には自動保存されています。行動しない選択も、あなたの自由です。</p></div>`);$('#copy').onclick=async()=>{const s=`ANOTHER LIFE｜未来のしおり\n${label}\n${state.action}`;try{await navigator.clipboard.writeText(s);$('#copy').textContent='コピーしたよ ✓'}catch{prompt('この文章をコピーしてね',s)}};$('#again').onclick=()=>set({screen:'future'});$('#restartStory').onclick=()=>set({screen:'story',chapter:0,choices:[]});drawScene('end')}
+
+function render(){clearTimeout(storyTimer);cancelAnimationFrame(anim);
+if(state.screen==='welcome'){shell(`<h1 class="logo">ANOTHER LIFE</h1><p class="subtitle">もしも、別の道を選んでいたら。</p><div class="panel">${scene()}<h2 class="heading">小さな選択から、違う人生が始まる。</h2><p class="story">選んだ道で、出会う人も、街も、仕事も変わっていく。短い物語を、もう一度。</p><button class="primary" id="begin">人生をはじめる →</button><p class="tiny">約2〜4分。データはこの端末だけに保存されます。</p></div>`);$('#begin').onclick=()=>set({screen:'setup'});drawScene('start');return}
+if(state.screen==='setup'){shell(`<h1 class="logo">主人公のこと</h1><div class="panel"><form id="setup"><label class="field"><span>呼び名</span><input id="name" maxlength="16" placeholder="好きな呼び名" value="${safe(state.name==='あなた'?'':state.name)}"></label><label class="field"><span>今の年齢</span><input id="age" type="number" min="18" max="90" value="${state.age}"></label><p class="tiny">今回の試作は10歳から30歳までの架空の4章を体験します。入力した年齢は最後の問いかけに使います。</p><button class="primary">物語を見る ▶</button></form></div>`);$('#setup').onsubmit=e=>{e.preventDefault();set({name:$('#name').value.trim()||'あなた',age:Math.min(90,Math.max(18,Number($('#age').value)||30)),screen:'story',chapter:0,choices:[]})};return}
+if(state.screen==='story'){const d=stageData(),i=state.chapter,chosen=state.choices[i];shell(`<h1 class="logo">${safe(state.name)}の、もうひとつの人生</h1>${progress()}<div class="panel story-panel"><div class="row"><span class="chapter">CHAPTER ${i+1} · ${safe(d.place)}</span><span class="tag">${stages[i]}歳</span></div>${scene()}<div class="film-caption" id="caption" aria-live="polite"></div><button class="film-skip" id="skip">▶ すぐに進む</button><section id="decision" hidden><h2 class="heading">${safe(d.question)}</h2>${i===3?`<button class="primary" id="finish">今の私へ →</button>`:`<div class="choices">${d.options.map((o,j)=>`<button class="choice" data-choice="${j}">${safe(o)} →</button>`).join('')}</div>`}</section></div><button class="secondary" id="back">← ${i?'ひとつ前の時代へ':'主人公の設定へ'}</button>`);
+const cap=$('#caption'),dec=$('#decision'),skip=$('#skip');let lines=d.intro.split('\n'),idx=0;
+function showDecision(){clearTimeout(storyTimer);dec.hidden=false;skip.hidden=true;cap.textContent='';}
+function play(){if(idx>=lines.length){showDecision();return}cap.textContent=lines[idx++];storyTimer=setTimeout(play,2200)}
+skip.onclick=showDecision;storyTimer=setTimeout(play,400);
+document.querySelectorAll('[data-choice]').forEach(b=>b.onclick=()=>{const a=state.choices.slice(0,i);a.push(Number(b.dataset.choice));set({choices:a,chapter:i+1})});
+$('#finish')?.addEventListener('click',()=>set({screen:'future'}));$('#back').onclick=()=>set(i?{chapter:i-1,choices:state.choices.slice(0,i-1)}:{screen:'setup'});drawScene('story');return}
+if(state.screen==='future'){const p=path();shell(`<h1 class="logo">ここからは、あなたの人生</h1><div class="panel">${scene()}<div class="chapter">AFTER STORY · ${state.age}歳</div><h2 class="heading">次は、どうする？</h2><p class="story">別の道を選べば、違う人に出会い、違う街にいたかもしれない。\nでも、今日のあなたの次のページは、まだ白紙。</p><div class="notice">この人生では、${safe(p.route.teen.person)}に出会い、${safe(p.young.job)}になった。</div><div class="choices"><button class="choice" data-future="新しい場所に行く">新しい場所に行ってみる</button><button class="choice" data-future="誰かと話す">誰かと話してみる</button><button class="choice" data-future="今を大切にする">今の暮らしを大切にする</button></div><button class="secondary" id="replay">別の人生も見てみる ↺</button></div>`);document.querySelectorAll('[data-future]').forEach(b=>b.onclick=()=>set({future:b.dataset.future,screen:'done'}));$('#replay').onclick=()=>set({screen:'story',chapter:0,choices:[]});drawScene('future');return}
+if(state.screen==='done'){shell(`<h1 class="logo">ANOTHER LIFE</h1><div class="panel">${scene()}<h2 class="heading">次は、どうする？</h2><p class="story">あなたが選んだ次の一歩：${safe(state.future)}。\n選ばなかった道にも、まだ可能性がある。</p><button class="primary" id="again">もうひとつの人生を見てみる</button><p class="tiny">正解はありません。何もしない日があっても大丈夫。</p></div>`);$('#again').onclick=()=>set({screen:'story',chapter:0,choices:[]});drawScene('end')}
 }
-render();if('serviceWorker'in navigator&&location.protocol.startsWith('http'))window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
+render();
+if('serviceWorker'in navigator&&location.protocol.startsWith('http'))window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js?v=5').catch(()=>{}));
