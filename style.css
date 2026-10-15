@@ -4,3 +4,16 @@
 .scene{overflow:hidden;border-radius:18px;background:#e8dfd3;box-shadow:inset 0 0 0 1px #ffffff88;}
 .scene canvas{display:block;width:100%;height:auto;aspect-ratio:360/212;image-rendering:auto;}
 @media(prefers-reduced-motion:reduce){.scene canvas{animation:none}}
+
+/* v0.3 cinematic layout: taller, edge-to-edge illustrated stage */
+#app{max-width:620px;padding:12px 12px 28px}
+.logo{margin:10px 4px 3px;font-size:25px}
+.subtitle{margin:0 4px 10px;font-size:12px}
+.panel{padding:12px;border-radius:20px}
+.scene{height:clamp(330px,58dvh,590px);aspect-ratio:auto;margin:8px -12px 15px;border-radius:18px;position:relative;overflow:hidden}
+.scene canvas{position:absolute;top:0;left:50%;transform:translateX(-50%);width:auto;height:100%;max-width:none;aspect-ratio:360/212}
+.heading{font-size:21px;margin:6px 0 7px}
+.story{font-size:14px;line-height:1.7;margin:8px 0 12px}
+.choice{padding:12px;min-height:48px}
+.choices{gap:7px}
+@media(max-height:650px){.scene{height:clamp(260px,52dvh,390px)}}
