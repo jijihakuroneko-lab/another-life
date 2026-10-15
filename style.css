@@ -5,15 +5,25 @@
 .scene canvas{display:block;width:100%;height:auto;aspect-ratio:360/212;image-rendering:auto;}
 @media(prefers-reduced-motion:reduce){.scene canvas{animation:none}}
 
-/* v0.3 cinematic layout: taller, edge-to-edge illustrated stage */
-#app{max-width:620px;padding:12px 12px 28px}
-.logo{margin:10px 4px 3px;font-size:25px}
-.subtitle{margin:0 4px 10px;font-size:12px}
-.panel{padding:12px;border-radius:20px}
-.scene{height:clamp(330px,58dvh,590px);aspect-ratio:auto;margin:8px -12px 15px;border-radius:18px;position:relative;overflow:hidden}
-.scene canvas{position:absolute;top:0;left:50%;transform:translateX(-50%);width:auto;height:100%;max-width:none;aspect-ratio:360/212}
-.heading{font-size:21px;margin:6px 0 7px}
-.story{font-size:14px;line-height:1.7;margin:8px 0 12px}
-.choice{padding:12px;min-height:48px}
+/* v0.4: compact cinematic story; return to v0.2 landscape stage */
+#app{max-width:520px;padding:10px 14px 20px}
+.logo{font-size:23px;margin:8px 0 4px}
+.progress{margin:9px 0}
+.panel{padding:12px 14px;border-radius:18px}
+.scene{width:100%;height:auto;aspect-ratio:360/212;margin:8px 0 10px;border-radius:14px}
+.scene canvas{width:100%;height:100%;position:static;transform:none;aspect-ratio:360/212}
+.heading{font-size:19px;margin:5px 0 7px}
+.story{font-size:13px;line-height:1.55;margin:7px 0 10px}
+.choice{padding:10px 12px;min-height:43px;font-size:13px}
 .choices{gap:7px}
-@media(max-height:650px){.scene{height:clamp(260px,52dvh,390px)}}
+.chapter{font-size:10px;margin-top:4px}
+.film-caption{min-height:40px;display:flex;align-items:center;justify-content:center;text-align:center;font-size:13px;line-height:1.5;color:#745b68;animation:fadeCaption .4s ease}
+.film-skip{display:block;margin:2px auto 5px;background:none;border:0;color:#9d7784;font-size:11px;padding:6px}
+.story-panel .ending{font-size:19px;margin:8px 0}
+.story-panel .notice{margin:8px 0;font-size:12px}
+.story-panel .primary{margin-top:7px;padding:12px}
+.story-panel [hidden],#filmControls[hidden]{display:none!important}
+.secondary{padding:8px;margin-top:7px;font-size:12px}
+.foot{margin:8px 0}
+@keyframes fadeCaption{from{opacity:.3}to{opacity:1}}
+@media(max-height:700px){.scene{aspect-ratio:2.1}.story{line-height:1.45}.film-caption{min-height:30px}}
