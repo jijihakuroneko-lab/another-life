@@ -19,7 +19,63 @@ const chapters=[
 const futures=[['挑戦','新しい仕事や学びを探す'],['時間','自分だけの時間を増やす'],['声','自分の希望を言葉にする'],['探検','まだ知らない可能性を探す']];
 const actions=['気になることを10分だけ調べる','今の気持ちを一行だけ書く','自分のための予定を一つ考える','今日は何も決めず、余韻を楽しむ'];
 function shell(content){app.innerHTML=`<header class="top"><span>✦ ANOTHER LIFE</span><button class="ghost" id="restart" aria-label="最初からやり直す">↺ はじめから</button></header>${content}<div class="foot">あなたの人生に、正解はひとつじゃない。</div>`;$('#restart')?.addEventListener('click',()=>{if(confirm('保存した物語を消して最初から始めますか？')){state=fresh();persist();render()}})}
-function drawScene(type){const canvas=$('canvas');if(!canvas)return;cancelAnimationFrame(anim);const ctx=canvas.getContext('2d');let t=0;function paint(){const w=360,h=212;const ratio=Math.min(devicePixelRatio||1,2);if(canvas.width!==w*ratio){canvas.width=w*ratio;canvas.height=h*ratio}ctx.setTransform(ratio,0,0,ratio,0,0);t+=.024;const palettes=[['#cfe9e1','#a7c6ad','#f5e4bb'],['#d9e2f1','#aebdd7','#f8d9bb'],['#f4d8df','#d6b2c4','#f6e7bc'],['#d6d9ef','#9fb9ce','#f4c7a9'],['#e7d6e8','#aabcb4','#ffe5a8'],['#f7d6c7','#d4b5b7','#fff0c1']];const p=palettes[Math.min(state.chapter,5)];ctx.fillStyle=p[0];ctx.fillRect(0,0,w,h);ctx.fillStyle=p[2];ctx.beginPath();ctx.arc(290,44,22,0,Math.PI*2);ctx.fill();for(let i=0;i<5;i++){let x=i*84-16;ctx.fillStyle=i%2?'#e7c2b5':'#f7ead4';ctx.fillRect(x,82+(i%2)*17,65,104);ctx.fillStyle='#fff8de';ctx.fillRect(x+13,103+(i%2)*17,16,19);ctx.fillRect(x+37,103+(i%2)*17,16,19)}ctx.fillStyle=p[1];ctx.fillRect(0,172,w,40);ctx.fillStyle='#f8e7d2';ctx.fillRect(0,179,w,10);const bob=Math.sin(t*2)*2;const x=177,y=117+bob;ctx.fillStyle='#76657333';ctx.beginPath();ctx.ellipse(x,180,27,6,0,0,Math.PI*2);ctx.fill();ctx.fillStyle='#655b74';ctx.fillRect(x-15,y+45,10,19);ctx.fillRect(x+5,y+45,10,19);ctx.fillStyle=state.chapter%2?'#bd869b':'#e39b83';ctx.beginPath();ctx.moveTo(x-20,y+13);ctx.lineTo(x+20,y+13);ctx.lineTo(x+23,y+48);ctx.lineTo(x-23,y+48);ctx.fill();ctx.fillStyle='#f4c9aa';ctx.beginPath();ctx.roundRect(x-17,y-19,34,40,15);ctx.fill();ctx.fillStyle='#594b59';ctx.beginPath();ctx.arc(x,y-18,20,Math.PI,0);ctx.lineTo(x+17,y-8);ctx.lineTo(x+13,y-15);ctx.quadraticCurveTo(x,y-5,x-17,y-14);ctx.closePath();ctx.fill();ctx.fillStyle='#4f4551';ctx.beginPath();ctx.arc(x-7,y+2,2,0,7);ctx.arc(x+8,y+2,2,0,7);ctx.fill();ctx.strokeStyle='#ad7274';ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(x,y+7,5,.2,Math.PI-.2);ctx.stroke();ctx.fillStyle='#fffaf5';ctx.beginPath();ctx.roundRect(213,59,130,38,12);ctx.fill();ctx.fillStyle='#745966';ctx.font='bold 12px sans-serif';ctx.fillText(type==='end'?'つづきは、あなた。':type==='future'?'未来はまだ白紙。':'今日はどうしよう？',222,83);anim=requestAnimationFrame(paint)}paint()}
+function drawScene(type){
+ const canvas=$('canvas');if(!canvas)return;
+ cancelAnimationFrame(anim);const ctx=canvas.getContext('2d');if(!ctx)return;
+ let tick=0;const chapter=state.screen==='welcome'?0:state.screen==='future'||state.screen==='done'?5:Math.min(state.chapter||0,5);
+ const scenes=[
+ {sky:['#d4e8e4','#fff0d7'],ground:'#b8cdb1',kind:'park',time:'day'},
+ {sky:['#d5e6ee','#f9e9d8'],ground:'#c9c0b5',kind:'school',time:'day'},
+ {sky:['#f4d6ce','#f5e6d2'],ground:'#c5ac9f',kind:'cafe',time:'evening'},
+ {sky:['#c8d9e5','#e7dfd3'],ground:'#b3b4ad',kind:'city',time:'day'},
+ {sky:['#777caa','#efb9ad'],ground:'#a1a1a8',kind:'home',time:'night'},
+ {sky:['#9fa8ca','#f8c5a8'],ground:'#a8ada6',kind:'water',time:'evening'}];
+ const sc=scenes[chapter];const w=360,h=212;const ratio=Math.min(window.devicePixelRatio||1,2);
+ function poly(points,fill){ctx.fillStyle=fill;ctx.beginPath();points.forEach(([x,y],i)=>i?ctx.lineTo(x,y):ctx.moveTo(x,y));ctx.closePath();ctx.fill()}
+ function ellipse(x,y,rx,ry,color){ctx.fillStyle=color;ctx.beginPath();ctx.ellipse(x,y,rx,ry,0,0,Math.PI*2);ctx.fill()}
+ function rect(x,y,ww,hh,color){ctx.fillStyle=color;ctx.fillRect(x,y,ww,hh)}
+ function rounded(x,y,ww,hh,r,color){ctx.fillStyle=color;ctx.beginPath();ctx.roundRect(x,y,ww,hh,r);ctx.fill()}
+ function cloud(x,y,k=1){ellipse(x,y,22*k,8*k,'#ffffffa8');ellipse(x-11*k,y-5*k,13*k,9*k,'#ffffffa8');ellipse(x+8*k,y-8*k,17*k,11*k,'#ffffffa8')}
+ function windowAt(x,y){rounded(x,y,19,29,2,'#f8e7d4');rect(x+9,y,1,29,'#c2ac9f');rect(x,y+14,19,1,'#c2ac9f')}
+ function background(t){
+ const grad=ctx.createLinearGradient(0,0,0,190);grad.addColorStop(0,sc.sky[0]);grad.addColorStop(1,sc.sky[1]);rect(0,0,w,h,grad);
+ const sunX=290,sunY=sc.time==='night'?45:57;
+ ellipse(sunX,sunY,sc.time==='night'?13:20,sc.time==='night'?13:20,sc.time==='night'?'#fff6dd':'#ffe4a5');
+ if(sc.time==='night')for(let i=0;i<16;i++){const x=(i*67+24)%350,y=(i*37+12)%105;ellipse(x,y,1+(i%3)*.4,1+(i%3)*.4,'#fff7e0a8')}
+ else {cloud(55+(t*2)%35,37,.72);cloud(205-(t*.9)%24,56,.52)}
+ if(sc.kind==='park'||sc.kind==='water'){
+ poly([[0,139],[65,105],[126,143],[210,114],[280,140],[360,116],[360,180],[0,180]],'#9eafb3a6');
+ if(sc.kind==='water'){rect(0,146,360,66,'#94b9c3');for(let i=0;i<12;i++){rect((i*49+t*6)%380,157+i%4*13,17,1,'#e8e6d1a8')}}
+ else{rect(0,164,360,48,sc.ground);for(let i=0;i<4;i++){const x=i*105+12;rect(x,104,7,70,'#917e76');ellipse(x+4,98,31,29,i%2?'#b5c6ad':'#c8d1b0')}}
+ }else if(sc.kind==='school'||sc.kind==='city'){
+ for(let i=0;i<6;i++){const x=i*69-8,y=79+(i%3)*13;rounded(x,y,64,105,3,i%2?'#c5b4b0':'#dfc8b6');for(let j=0;j<3;j++)windowAt(x+8+j*18,y+18)}
+ rect(0,181,360,31,sc.ground);rect(0,180,360,3,'#e6d9ca')
+ }else if(sc.kind==='cafe'||sc.kind==='home'){
+ rect(0,0,360,212,sc.kind==='home'?'#b9adc0':'#e9d7c7');rounded(19,24,120,115,6,'#f7ebdd');rect(25,30,108,104,sc.kind==='home'?'#777ca4':'#e6b5ab');rect(77,30,5,104,'#f6e9d9');rect(25,82,108,4,'#f6e9d9');
+ rect(0,169,360,43,sc.kind==='home'?'#a393a1':'#c6aa99');rounded(215,128,110,12,4,'#a88d82');rect(230,139,8,47,'#9e8175');rect(302,139,8,47,'#9e8175');rounded(278,107,18,22,5,'#eee0cc');
+ if(sc.kind==='home'){rounded(210,66,96,52,7,'#d5c0bc');rounded(221,75,74,34,5,'#eee0d5')}
+ }
+ // atmospheric foreground: slow drifting particles
+ for(let i=0;i<9;i++){const x=(i*51+tick*(i%2?4:-3)+400)%390-10,y=(i*29+36+Math.sin(tick+i)*5)%190;ellipse(x,y,1.8,1.4,sc.time==='night'?'#fff4de66':'#fffdf599')}
+ }
+ function protagonist(t){
+ const x=180+(type==='story'?Math.sin(t*.45)*7:0),y=143+Math.sin(t*2.4)*2;
+ ellipse(x,192,29,5,'#655a6540');
+ // little feet, independent from the body
+ ellipse(x-15,182+Math.sin(t*3)*2,9,5,'#f3e7d5');ellipse(x+15,182-Math.sin(t*3)*2,9,5,'#f3e7d5');
+ const body=ctx.createLinearGradient(x-26,y-34,x+20,y+40);body.addColorStop(0,'#fffaf0');body.addColorStop(1,'#f0dfcd');
+ ctx.fillStyle=body;ctx.strokeStyle='#74676b';ctx.lineWidth=1.8;ctx.beginPath();ctx.moveTo(x-27,y+27);ctx.bezierCurveTo(x-31,y-5,x-24,y-39,x,y-41);ctx.bezierCurveTo(x+25,y-41,x+31,y-7,x+27,y+27);ctx.quadraticCurveTo(x+25,y+37,x+13,y+38);ctx.lineTo(x-13,y+38);ctx.quadraticCurveTo(x-26,y+37,x-27,y+27);ctx.closePath();ctx.fill();ctx.stroke();
+ // tiny eyes blink every few seconds
+ const blink=t%5.1>4.98;ctx.strokeStyle='#51484d';ctx.lineWidth=2;ctx.lineCap='round';
+ for(const dx of [-8,9]){if(blink){ctx.beginPath();ctx.moveTo(x+dx-2,y-4);ctx.lineTo(x+dx+2,y-4);ctx.stroke()}else ellipse(x+dx,y-5,1.7,2.8,'#51484d')}
+ ellipse(x+1,y+4,1.2,.8,'#b99591');
+ if(chapter===1||chapter===3){rounded(x+19,y+11,17,19,3,'#a78e8e');ctx.strokeStyle='#8a7479';ctx.beginPath();ctx.arc(x+25,y+12,7,Math.PI,0);ctx.stroke()}
+ if(chapter===4){rounded(x-24,y+15,48,7,3,'#d2a6a4')}
+ if(chapter===5){ctx.strokeStyle='#d2a6a4';ctx.lineWidth=5;ctx.beginPath();ctx.arc(x,y+3,27,.35,Math.PI-.3);ctx.stroke()}
+ }
+ function paint(){if(!canvas.isConnected)return;if(canvas.width!==w*ratio){canvas.width=w*ratio;canvas.height=h*ratio}ctx.setTransform(ratio,0,0,ratio,0,0);tick+=.016;ctx.clearRect(0,0,w,h);background(tick);protagonist(tick);anim=requestAnimationFrame(paint)}
+ paint();
+}
 function render(){cancelAnimationFrame(anim);if(state.screen==='welcome'){shell(`<h1 class="logo">ANOTHER LIFE</h1><p class="subtitle">もうひとつの人生を、ちょっと歩いてみよう。</p><div class="panel"><div class="scene"><canvas aria-label="街に立つ小さな主人公のアニメーション"></canvas></div><div class="stars">✦ ✧ ✦</div><h2 class="heading">もし、あの日の選択が<br>少し違っていたら？</h2><p class="story">自分に似た小さな主人公と、子ども時代から今日までを旅する物語。\n最後のページは、まだ白紙。</p><button class="primary" id="begin">物語をはじめる →</button><p class="tiny">約3〜5分で遊べる試作版。入力はこの端末内に保存され、サーバーには送信されません。</p></div>`);$('#begin').onclick=()=>set({screen:'setup'});drawScene('start');return}
 if(state.screen==='setup'){shell(`<h1 class="logo">あなたの物語</h1><div class="panel"><div class="chapter">PROLOGUE</div><h2 class="heading">主人公をつくろう</h2><p class="tiny">本名でなくてOK。詳しい個人情報は必要ないよ。</p><form id="setupForm"><div class="field"><label for="name">呼び名</label><input id="name" maxlength="16" value="${safe(state.name==='あなた'?'':state.name)}" placeholder="例：かほ"></div><div class="field"><label for="age">今の年齢（18〜90歳）</label><input id="age" type="number" min="18" max="90" required value="${state.age}"></div><div class="field"><label for="home">思い出のある場所</label><input id="home" maxlength="35" value="${safe(state.home)}" placeholder="例：海の近くの街"></div><div class="field"><label for="interest">昔から好きなこと</label><input id="interest" maxlength="35" value="${safe(state.interest)}" placeholder="例：動物、絵を描くこと"></div><div class="field"><label for="milestone">人生の大きな出来事（任意）</label><input id="milestone" maxlength="60" value="${safe(state.milestone)}" placeholder="例：新しい街へ引っ越した"></div><button class="primary" type="submit">私の人生を再生する ▶</button></form><p class="tiny">物語は架空の分岐です。実際の過去や未来を推定するものではありません。</p></div>`);$('#setupForm').onsubmit=e=>{e.preventDefault();set({name:$('#name').value.trim()||'あなた',age:Math.max(18,Math.min(90,Number($('#age').value)||30)),home:$('#home').value.trim()||'ある街',interest:$('#interest').value.trim()||'新しいことを知る',milestone:$('#milestone').value.trim(),chapter:0,choices:[],screen:'story'})};return}
 if(state.screen==='story'){let i=state.chapter,c=chapters[i],end=i===5;const prior=state.choices[i-1];let memory=i>0&&prior!==undefined?`<div class="notice">前の章のつづき：${safe(chapters[i-1].results[prior])}</div>`:'';shell(`<h1 class="logo">${safe(state.name)}の人生</h1><div class="progress"><div style="width:${(i+1)/6*100}%"></div></div><div class="panel"><div class="row"><span class="chapter">CHAPTER ${String(i+1).padStart(2,'0')} · ${safe(c.place)}</span><span class="tag">${ageAt(i)}歳</span></div><div class="scene"><canvas aria-label="主人公が成長していくアニメーション"></canvas></div><h2 class="heading">${c.title}</h2>${memory}<p class="story">${safe(c.story(state))}</p>${end?`<div class="ending">ここから先は、<br>まだ誰も知らない。</div><button class="primary" id="finish">次は、どうする？ →</button>`:`<div class="chapter">あなたなら、どうする？</div><div class="choices">${c.options.map((v,n)=>`<button class="choice" data-pick="${n}">${safe(v)} →</button>`).join('')}</div>`}</div><button class="secondary" id="back">← ${i?'ひとつ前の章へ':'プロフィールを編集'}</button>`);document.querySelectorAll('[data-pick]').forEach(b=>b.onclick=()=>{const a=[...state.choices];a[i]=Number(b.dataset.pick);set({choices:a,chapter:i+1})});$('#finish')?.addEventListener('click',()=>set({screen:'future'}));$('#back').onclick=()=>i?set({chapter:i-1,choices:state.choices.slice(0,i-1)}):set({screen:'setup'});drawScene(end?'end':'story');return}
